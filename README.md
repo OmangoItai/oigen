@@ -113,7 +113,7 @@ OI Gen 还提供比较工具，方便你对比两份代码的差异
 
 `debug.compareRun` 会在结果相同时，返回 `True`；在结果有差异时，返回一个问题数据的文件名列表
 
-你可以选择是否在终端查看它们
+你可以选择是否在终端查看它们，`isPrint` 开关默认为 `False`
 
 ```py
 oi.debug.compareRun( 'wrongAanswer.exe', isPrint = True )
