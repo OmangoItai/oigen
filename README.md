@@ -66,7 +66,7 @@ def wirteSeq(n: int, m: int):
     return text
 ```
 
-开始生成 2 组数据，并使用挂在到 OI Gen 的方法 `seq`
+开始生成 2 组数据，并使用挂载到 OI Gen 的方法 `seq`
 
 ```py
 oi.gen( 2, "seq" )
