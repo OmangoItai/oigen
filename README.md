@@ -174,7 +174,7 @@ while oi.debug.compareRun('simple.exe') == True or oi.debug.compareRun('hack.exe
 - 加强`debug.compareRun`自动养蛊策略，对于同一批次的强数采取据保留而非直接重写
 - 添加对于常规题目类型的自定义**自动模板**`handler`，比如`@oi.sequence`、`@oi.matrix()`装饰器
 - 引入一下机器学习，试试 ai 养蛊
-- 搞个前端，在线化服务~~，开始恰烂钱~~
+- 搞个前端，在线化服务 ~~，开始恰烂钱~~
 - 加个数据生成的进度条
 - 加入 pip 套餐，未来使用 pip 安装
 
