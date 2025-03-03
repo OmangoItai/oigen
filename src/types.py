@@ -23,6 +23,7 @@ class Config:
     ioFilePath: Path
     dataType: OIDataType = None
     timeout: int = 10
+    batch: int = 10
 
     def __post_init__(self):
         self.stdFilePath = self.stdFilePath.absolute()

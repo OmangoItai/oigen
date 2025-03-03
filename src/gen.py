@@ -1,8 +1,10 @@
 from .error import OIError
+from .types import OIDataType, CppType, Config
+from .debug import Debug
 from typing import Any, Callable
 from pathlib import Path
-import subprocess, os
-from .types import OIDataType, CppType, Config
+import subprocess
+
 class OI:
 
     CPPTypeMap = {
@@ -20,13 +22,16 @@ class OI:
                 stdFilePath=Path(config["stdFilePath"]),
                 ioFilePath=Path(config["ioFilePath"]),
                 dataType=config.get("dataType"),
-                timeout=config.get("timeout", 10)
+                timeout=config.get("timeout", 10),
+                batch=config.get("batch", 10),
             )
-        self.currentBatch = 0
+        self.currentBatch = 1
+        self.currentMaxBatch = 1
         self.args = {}
         self.handlers = {}
         self._validatePath(self.config.stdFilePath)
         self._validatePathAndCreate(self.config.ioFilePath)
+        self.debug = Debug(self)
 
     def _resolveValue(self, value: Any) -> Any:
         return value() if callable(value) else value
@@ -61,10 +66,10 @@ class OI:
                 expectedType = self.config.args[key]
                 raise OIError(f"❌️Invalid type for \"{key}\", expected {expectedType}({self.CPPTypeMap[expectedType]}) value or function which return this type, but got {type(value)}: {value}.")
     
-    def resetBatch(self):
-        self.currentBatch = 0
+    def resetCurrentBatch(self):
+        self.currentBatch = 1
     
-    def setBatch(self, batch: int):
+    def setCurrentBatch(self, batch: int):
         self.currentBatch = batch
 
     def setArgs(self, args: dict[str, Any]):
@@ -83,9 +88,9 @@ class OI:
         return decorator
     
     def gen(self, batch: int, handlerName: str):
-        for bias in range(1, batch + 1):
-            inputFilePath = os.path.join(self.config.ioFilePath, f'{self.currentBatch + bias}.in')
-            outputFilePath = os.path.join(self.config.ioFilePath, f'{self.currentBatch + bias}.out')
+        for idx in range(self.currentBatch, min(self.config.batch, self.currentBatch + batch - 1) + 1):
+            inputFilePath = self.config.ioFilePath / f'{idx}.in'
+            outputFilePath = self.config.ioFilePath / f'{idx}.out'
             handler = self.handlers[handlerName]
             resolvedArgs = {key: self._resolveValue(value) for key, value in self.args.items()}
             # gen input
@@ -108,91 +113,5 @@ class OI:
                 if e.returncode == 0xC0000005:
                     raise OIError(f"❌️\"{self.config.stdFilePath}\" crashed with illegal memory access. \n\t❗❗Please check out your STDDD program!😠😠")
                 raise OIError(f"❌️Error running \"{self.config.stdFilePath}\":\n\t{e.stderr}") from e
-        self.currentBatch += batch
-    
-    class debug:
-        def run(self, printOnly: bool = False):
-            for filename in os.listdir(self.config.ioFilePath):
-                if filename.endswith(".in"):
-                    inputFilePath = os.path.join(self.config.ioFilePath, filename)
-                    outputFilePath = os.path.join(self.config.ioFilePath, filename.replace(".in", ".out"))
-
-                    with open(inputFilePath, 'r') as stdinFile:
-                        if printOnly:
-                            result = subprocess.run(
-                                [self.config.stdFilePath],
-                                stdin=stdinFile,
-                                stdout=subprocess.PIPE,  # 捕获输出
-                                stderr=subprocess.PIPE,
-                                universal_newlines=True,
-                                check=True,
-                                timeout=self.config.timeout
-                            )
-                            print(f"=== Output for {filename} ===")
-                            print(result.stdout)
-                            print("=" * 30)
-                        else:
-                            with open(outputFilePath, 'w') as stdoutFile:
-                                result = subprocess.run(
-                                    [self.config.stdFilePath],
-                                    stdin=stdinFile,
-                                    stdout=stdoutFile,
-                                    stderr=subprocess.PIPE,
-                                    universal_newlines=True,
-                                    check=True,
-                                   timeout=self.config.timeout
-                                )
-
-                    if result.stderr:
-                        raise OIError(f"❌️Error in running {self.config.stdFilePath} on {filename}:\n\t{result.stderr}.")
-        
-        def compareRun(self, otherPath: str, isPrint: bool = False):
-            failedMatches = []
-            for filename in os.listdir(self.config.ioFilePath):
-                if filename.endswith(".in"):
-                    inputFilePath = os.path.join(self.config.ioFilePath, filename)
-
-                    # 运行 stdFilePath
-                    with open(inputFilePath, 'r') as stdinFile:
-                        stdResult = subprocess.run(
-                            [self.config.stdFilePath],
-                            stdin=stdinFile,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            universal_newlines=True,
-                            check=True,
-                            timeout=self.config.timeout
-                        )
-
-                    if stdResult.stderr:
-                        raise OIError(f"❌️Error in running {self.config.stdFilePath} on {filename}:\n\t{stdResult.stderr}.")
-
-                    # otherPath
-                    with open(inputFilePath, 'r') as stdinFile:
-                        otherResult = subprocess.run(
-                            [otherPath],
-                            stdin=stdinFile,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            universal_newlines=True,
-                            check=True,
-                            timeout=self.config.timeout
-                        )
-
-                    if otherResult.stderr:
-                        raise OIError(f"❌️Error in running {otherPath} on {filename}:\n\t{otherResult.stderr}.")
-
-                    # compare
-                    if stdResult.stdout.strip() != otherResult.stdout.strip():
-                        failedMatches.append(filename)
-
-            if isPrint:
-                print("=" * 30)
-                print(f"{self.config.stdFilePath}: {stdResult.stdout}")
-                print()
-                print(f"{otherPath}: {otherResult.stdout}")
-                print()
-                if failedMatches:
-                    print("Mismatched files:", *failedMatches, sep="")
-
-            return True if not failedMatches else failedMatches
+            self.currentBatch += 1
+            self.currentMaxBatch = max(self.currentMaxBatch, self.currentBatch)

@@ -97,16 +97,19 @@ oi.gen( 4, "seq" )
 
 ## 测试工具
 
-如果你想单纯测试**标准程序（std）**对**所有输入数据**的输出结果，可以使用`run`
+如果你想单纯测试**标准程序（std）**的输出结果，可以使用`run`
 
 ```py
 oi.debug.run()
 ```
 
-你可以手动打开 `printOnly` 开关，在终端查看结果，防止更改 `*.out` 文件
+你可以手动打开 `printOnly` 开关，在终端查看结果，防止更改 `*.out` 文件；
+
+默认对所有`.in`和`.out`文件进行测试，也可以手动指定测试的数据编号
 
 ```py
-oi.debug.run( printOnly = True )
+oi.debug.run(targetIO = [1,2,3,4], printOnly = True )
+oi.debug.run(targetIO = range(6,10+1), printOnly = False )
 ```
 
 OI Gen 还提供比较工具，方便你对比两份代码的差异
@@ -115,28 +118,26 @@ OI Gen 还提供比较工具，方便你对比两份代码的差异
 
 你可以选择是否在终端查看它们，`isPrint` 开关默认为 `False`
 
+默认对所有`.in`和`.out`文件进行测试，也可以手动指定对比的数据编号
+
 ```py
-oi.debug.compareRun( 'wrongAanswer.exe', isPrint = True )
+oi.debug.compareRun( 'wrongAanswer.exe', targetIO = [7, 8, 9, 10], isPrint = True )
 ```
 
 ```sh
-==============================
-1.in:
-==============================
+============= 7.in =================
 std.exe:
-12 5
+23
 
-wrongAnser.exe:
-0 0
+pusu.exe:
+0
 
-==============================
-3.in:
-==============================
+============ 10.in ==================
 std.exe:
-12 5
+39
 
-wrongAnser.exe:
-0 0
+pusu.exe:
+0
 ```
 
 ## 养蛊
@@ -156,7 +157,7 @@ oi.setArgs({
 oi.gen( 5, 'matrix' )
 
 while oi.debug.compareRun('simple.exe') == True or oi.debug.compareRun('hack.exe') == True:
-    oi.setBatch(5) # 重新
+    oi.setCurrentBatch(6) # 重新从第 6 组开始生成
     oi.gen( 5, 'matrix')
 
 ```
