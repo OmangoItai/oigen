@@ -103,9 +103,9 @@ class OI:
         if args:
             self.setArgs(args)
         with Progress() as progress:
-            targetBatch = min(self.config.batch, self.currentBatch + batch - 1) + 1
-            task = progress.add_task("[cyan]Gnerating...", total = targetBatch - self.currentBatch)
-            for idx in range(self.currentBatch, targetBatch):
+            targetBatches = min(self.config.batch, self.currentBatch + batch - 1) + 1
+            task = progress.add_task("[cyan]Gnerating...", total = targetBatches - self.currentBatch)
+            for idx in range(self.currentBatch, targetBatches):
                 inputFilePath = self.config.ioFilePath / f'{idx}.in'
                 outputFilePath = self.config.ioFilePath / f'{idx}.out'
                 handler = self.handlers[handlerName]
@@ -132,6 +132,6 @@ class OI:
                     raise OIError(message.runtimeError(self.config.stdFilePath, e)) from e
                 progress.update(task, advance=1)
                 progress.refresh()
-                progress.console.log(f"{inputFilePath} {outputFilePath} [bold green]done.[/]")
+                progress.console.log(f"\"{inputFilePath.name}\", \"{outputFilePath.name}\" [bold green]done.[/]")
                 self.currentBatch += 1
                 self.currentMaxBatch = max(self.currentMaxBatch, self.currentBatch)

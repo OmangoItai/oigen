@@ -51,10 +51,10 @@ oi.gen(4, "seqh", {
 ```sh
 > poetry run python test.py
 Oi Gen 0.1.0 initialized.
-[06:31:36] C:\test\1.in C:\test\1.out done.
-           C:\test\2.in C:\test\2.out done.
-           C:\test\3.in C:\test\3.out done.
-           C:\test\4.in C:\test\4.out done.
+[06:31:36] "1.in", "1.out" done.
+           "2.in", "2.out" done.
+           "3.in", "3.out" done.
+           "4.in", "4.out" done.
 Gnerating... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
 ```
 

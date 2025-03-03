@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import List
 import subprocess
 
+from rich.progress import Progress
+
 from oigen.errors import OIError
 
 class Debug:
@@ -12,86 +14,94 @@ class Debug:
         if not targetBatches:
             targetBatches = range(1, self.oi.currentMaxBatch + 1)
         targetPaths = [self.oi.config.ioFilePath / f"{tb}.in" for tb in targetBatches]
-        for filename in targetPaths:
-            inputFilePath = self.oi.config.ioFilePath / filename
-            outputFilePath = self.oi.config.ioFilePath / filename.replace(".in", ".out")
+        with Progress() as progress:
+            task = progress.add_task("[cyan]Running...", total = len(targetBatches))
+            for filename in targetPaths:
+                inputFilePath = self.oi.config.ioFilePath / filename
+                outputFilePath = self.oi.config.ioFilePath / filename.replace(".in", ".out")
 
-            with open(inputFilePath, 'r') as stdinFile:
-                if printOnly:
-                    result = subprocess.run(
-                        [self.oi.config.stdFilePath],
-                        stdin=stdinFile,
-                        stdout=subprocess.PIPE,  # 捕获输出
-                        stderr=subprocess.PIPE,
-                        universal_newlines=True,
-                        check=True,
-                        timeout=self.oi.config.timeout
-                    )
-                    print(f"=== Output for {filename} ===")
-                    print(result.stdout)
-                    print("=" * 30)
-                else:
-                    with open(outputFilePath, 'w') as stdoutFile:
+                with open(inputFilePath, 'r') as stdinFile:
+                    if printOnly:
                         result = subprocess.run(
                             [self.oi.config.stdFilePath],
                             stdin=stdinFile,
-                            stdout=stdoutFile,
+                            stdout=subprocess.PIPE,  # 捕获输出
                             stderr=subprocess.PIPE,
                             universal_newlines=True,
                             check=True,
                             timeout=self.oi.config.timeout
                         )
+                        print(f"=== Output for {filename} ===")
+                        print(result.stdout)
+                        print("=" * 30)
+                    else:
+                        with open(outputFilePath, 'w') as stdoutFile:
+                            result = subprocess.run(
+                                [self.oi.config.stdFilePath],
+                                stdin=stdinFile,
+                                stdout=stdoutFile,
+                                stderr=subprocess.PIPE,
+                                universal_newlines=True,
+                                check=True,
+                                timeout=self.oi.config.timeout
+                            )
+                if result.stderr:
+                    raise OIError(f"❌️Error in running {self.oi.config.stdFilePath} on {filename}:\n\t{result.stderr}.")
+                progress.update(task, advance=1)
+                progress.refresh()
+                progress.console.log(f"\"{self.oi.config.stdFilePath.name}\" [bold green]done.[/]")
 
-            if result.stderr:
-                raise OIError(f"❌️Error in running {self.oi.config.stdFilePath} on {filename}:\n\t{result.stderr}.")
-    
     def compareRun(self, otherPath: Path | str, targetBatches: List[int] = [], isPrint: bool = False):
         failedMatches = []
         otherPath = Path(otherPath)
         if not targetBatches:
             targetBatches = range(1, self.oi.currentMaxBatch + 1)
         targetPaths = [self.oi.config.ioFilePath / f"{tb}.in" for tb in targetBatches]
-        for filename in targetPaths:
-            inputFilePath = self.oi.config.ioFilePath / filename
+        with Progress() as progress:
+            task = progress.add_task("[cyan]Comparing...", total = len(targetBatches))
+            for filename in targetPaths:
+                inputFilePath = self.oi.config.ioFilePath / filename
 
-            # stdFilePath
-            with open(inputFilePath, 'r') as stdinFile:
-                stdResult = subprocess.run(
-                    [self.oi.config.stdFilePath],
-                    stdin=stdinFile,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                    check=True,
-                    timeout=self.oi.config.timeout
-                )
+                # stdFilePath
+                with open(inputFilePath, 'r') as stdinFile:
+                    stdResult = subprocess.run(
+                        [self.oi.config.stdFilePath],
+                        stdin=stdinFile,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True,
+                        timeout=self.oi.config.timeout
+                    )
 
-            if stdResult.stderr:
-                raise OIError(f"❌️Error in running {self.oi.config.stdFilePath} on {filename}:\n\t{stdResult.stderr}.")
+                if stdResult.stderr:
+                    raise OIError(f"❌️Error in running {self.oi.config.stdFilePath} on {filename}:\n\t{stdResult.stderr}.")
 
-            # otherPath
-            with open(inputFilePath, 'r') as stdinFile:
-                otherResult = subprocess.run(
-                    [otherPath],
-                    stdin=stdinFile,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                    check=True,
-                    timeout=self.oi.config.timeout
-                )
+                # otherPath
+                with open(inputFilePath, 'r') as stdinFile:
+                    otherResult = subprocess.run(
+                        [otherPath],
+                        stdin=stdinFile,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True,
+                        timeout=self.oi.config.timeout
+                    )
 
-            if otherResult.stderr:
-                raise OIError(f"❌️Error in running {otherPath} on {filename}:\n\t{otherResult.stderr}.")
+                if otherResult.stderr:
+                    raise OIError(f"❌️Error in running {otherPath} on {filename}:\n\t{otherResult.stderr}.")
 
-            # compare
-            if stdResult.stdout.strip() != otherResult.stdout.strip():
-                failedMatches.append(filename)
-                if isPrint:
-                    l = (30 - len(filename.name)) // 2
-                    r = 30 - l
-                    print('='*l, filename.name, '='*r)
-                    print(f"{self.oi.config.stdFilePath.name}:\n{stdResult.stdout}")
-                    print(f"{otherPath.name}:\n{otherResult.stdout}")
-
+                # compare
+                if stdResult.stdout.strip() != otherResult.stdout.strip():
+                    failedMatches.append(filename)
+                    if isPrint:
+                        l = (30 - len(filename.name)) // 2
+                        r = 30 - l
+                        print('='*l, filename.name, '='*r)
+                        print(f"{self.oi.config.stdFilePath.name}:\n{stdResult.stdout}")
+                        print(f"{otherPath.name}:\n{otherResult.stdout}")
+            progress.update(task, advance=1)
+            progress.refresh()
+            progress.console.log(f"\"{self.oi.config.stdFilePath.name}\" and \"{otherPath.name}\" [bold green]done.[/]")
         return True if not failedMatches else failedMatches
