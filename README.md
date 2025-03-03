@@ -4,33 +4,69 @@ Data generator for OI.
 
 一款准备做得专业化的微型框架，用于算法竞赛的出题工作。
 
-## 准备
+OI Gen 拥有友好的交互、报错支持，支持灵活的小功能组合，3 分钟一个 python 脚本，告别**所有**市面上繁琐的劣质 GUI 和系统脚本编写。
 
-引入核心类、C++ 类型
+## 快速开始
 
-```py
-from oigen import OI, CppType
-```
-
-如果你需要随机数，请引入**随机生成器**
+首先，配置 OI Gen。包括题目用到的参数 `args`，标准程序（AC 代码可执行文件）路径 `stdFilePath` 和 io 数据生成路径 `ioFilePath`
 
 ```py
-from oigen.values import randInt, randBool
+from oigen import OI
+from oigen.oitypes import CppType
+
+oi = OI({
+    "args": {
+        "n": CppType.Int
+    },
+    "stdFilePath": "./ac.exe",
+    "ioFilePath": "./test",
+})
 ```
 
-嫌麻烦可以一次全引入
+使用`@oi.handler`装饰器向 OI Gen 挂载一个 handler，用于数据生成。这里挂载一个序列生成的方法
 
 ```py
-from oigen.values import *
+from oi.values import randInt
+# 注意：randInt(l, r) 会返回一个随机值的生成器，即返回 random.randint(l, r) 的函数签名
+# 要返回值需要 randInt(l, r)()
+@oi.handler("seq")
+def anyNameIsOK(n: int):
+    text = ''
+    text += f"{n}\n"
+    for i in range (1, n+1):
+        text += str(randInt(114, 514)()) + ' ' 
+    return text
 ```
+
+生成 4 组数据，指定 handler 并填写题目参数的范围
+
+```py
+oi.gen(4, "seqh", {
+    "n": randInt(1,10)
+})
+```
+
+随机值生成器 `randInt` 会应用在每轮数据中，为你自动生成范围内的值
+
+```sh
+> poetry run python test.py
+Oi Gen 0.1.0 initialized.
+[06:31:36] C:\test\1.in C:\test\1.out done.
+           C:\test\2.in C:\test\2.out done.
+           C:\test\3.in C:\test\3.out done.
+           C:\test\4.in C:\test\4.out done.
+Gnerating... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+```
+
+完毕
 
 ## 配置 OI Gen
 
-将本题需要的数据填写进 `args` 中，并填入你的**标准程序（std）路径**和**题目数据路径**。
+将本题需要的数据填写进 `args` 中，并填入你的**标准程序（std）路径**和**题目数据路径**
 
 标程是你的正解代码所生成的**二进制文件**，**暂不支持源码编译自动执行！！不要填写源代码路径！**
 
-题目数据路径是 **批量生成`*.in`，`*.out`** 的路径，请单独安排，避免污染文件夹。
+题目数据路径是 **批量生成`*.in`，`*.out`** 的路径，请单独安排，避免污染文件夹
 
 ```py
 oi = OI(config = {
@@ -45,16 +81,7 @@ oi = OI(config = {
 
 ## 生成数据
 
-根据上面配置的 OI Gen 设置参数，支持**字面量**和**随机生成器**两种挂载方法（随机生成器在 `oigen.values` 中）。
-
-```py
-oi.setArgs({
-    "n": randInt( 5, 10 ),
-    "m": 0,
-})
-```
-
-使用装饰器 `@gen.handler()` 向 OI Gen 挂载数据生成方法，该方法返回字符串作为题目数据文件的内容。
+使用装饰器 `@oi.handler()` 向 OI Gen 挂载数据生成方法，该方法返回字符串作为题目数据文件的内容
 
 ```py
 @oi.handler("seq")
@@ -66,23 +93,30 @@ def wirteSeq(n: int, m: int):
     return text
 ```
 
-开始生成 2 组数据，并使用挂载到 OI Gen 的方法 `seq`
+生成 2 组数据
+
+记得指定**已挂载的**生成方法 handler，并填写参数范围
+
+支持**字面量**和**随机生成器**两种挂载方法（随机值生成器在 `oigen.values` 中）
 
 ```py
-oi.gen( 2, "seq" )
+oi.gen(2, "seq", {
+    "n": randInt( 5, 10 ),
+    "m": 0,
+})
 ```
 
-重新设置，扩大参数范围，再生成 4 组数据
+再来 4 组更大范围数据
 
 ```py
-oi.setArgs({
+oi.gen(4, "seq", {
     "n": randInt( 1000, 9999 ),
     "m": randInt( 5, 20 ),
 })
 oi.gen( 4, "seq" )
 ```
 
-这样生成出的数据会顺序命名为 
+数据们将按序排列好 
 
 ```sh
 1.in 1.out
@@ -97,7 +131,7 @@ oi.gen( 4, "seq" )
 
 ## 测试工具
 
-如果你想单纯测试**标准程序（std）**的输出结果，可以使用`run`
+如果你想单纯测试 **标准程序（std）** 的输出结果，可以使用`run`
 
 ```py
 oi.debug.run()
@@ -114,7 +148,7 @@ oi.debug.run(targetIO = range(6,10+1), printOnly = False )
 
 OI Gen 还提供比较工具，方便你对比两份代码的差异
 
-`debug.compareRun` 会在结果相同时，返回 `True`；在结果有差异时，返回一个问题数据的文件名列表
+`debug.compareRun` 会在结果相同时，返回 `True`；在结果有差异时，返回一个**问题数据列表**
 
 你可以选择是否在终端查看它们，`isPrint` 开关默认为 `False`
 
@@ -151,14 +185,17 @@ pusu.exe:
 @oi.handler('matrix')
 def ...
 
-oi.setArgs({
+oi.gen( 5, 'matrix', {
     ... # some simple data
 })
-oi.gen( 5, 'matrix' )
 
-while oi.debug.compareRun('simple.exe') == True or oi.debug.compareRun('hack.exe') == True:
-    oi.setCurrentBatch(6) # 重新从第 6 组开始生成
+while True:
+    oi.setCurrentBatch(6) # begein at 6.in
     oi.gen( 5, 'matrix')
+    if oi.debug.compareRun('simple.exe', range(6, 10+1)) == True or oi.debug.compareRun('hack.exe', range(6, 10+1)) == True:
+        continue
+    else
+        break
 
 ```
 
@@ -173,7 +210,7 @@ while oi.debug.compareRun('simple.exe') == True or oi.debug.compareRun('hack.exe
 以后可能会涉及到的优化：
 
 - 加强`debug.compareRun`自动养蛊策略，对于同一批次的强数采取据保留而非直接重写
-- ✅加个数据生成的进度条
+- ✅~~加个数据生成的进度条~~优化了所有界面，保证弱智也能看懂报错和提示
 - 支持源码编译到执行，包括一些主流语言（cpp、py、java）
 - 添加沙盒保护
 - 添加对于常规题目类型的自定义**自动模板**`handler`，比如`@oi.sequence`、`@oi.matrix()`装饰器
