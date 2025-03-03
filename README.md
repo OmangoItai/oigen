@@ -173,7 +173,7 @@ while oi.debug.compareRun('simple.exe') == True or oi.debug.compareRun('hack.exe
 以后可能会涉及到的优化：
 
 - 加强`debug.compareRun`自动养蛊策略，对于同一批次的强数采取据保留而非直接重写
-- 加个数据生成的进度条
+- ✅加个数据生成的进度条
 - 支持源码编译到执行，包括一些主流语言（cpp、py、java）
 - 添加沙盒保护
 - 添加对于常规题目类型的自定义**自动模板**`handler`，比如`@oi.sequence`、`@oi.matrix()`装饰器

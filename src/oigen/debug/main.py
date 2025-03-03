@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import List
-from .error import OIError
 import subprocess
+
+from oigen.errors import OIError
 
 class Debug:
     def __init__(self, oiInstance):
