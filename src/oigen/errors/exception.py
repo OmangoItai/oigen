@@ -72,14 +72,14 @@ class message:
     
     @staticmethod
     def PathError(path: str|Path, e: Optional[Any] = None):
-        msg = f"Path invalid: \"{path}\".\nPlase check out the path."
+        msg = f"Path invalid: \"{path}\".\nPlease check out the path."
         if e:
             msg += f"\n{e}"
         return msg
     
     @staticmethod
     def RangeInvalid(left: Any, right: Any, e: Optional[Any] = None):
-        msg = "Invalid range :({left}, rightLimit:{right}).\n❗❗Please check out the range!😠😠"
+        msg = f"Invalid range :({left}, rightLimit:{right}).\n❗❗Please check out the range!😠😠"
         if e:
             msg += f"\n{e}"
         return msg

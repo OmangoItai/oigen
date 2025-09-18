@@ -116,8 +116,14 @@ class OI:
                 # run and gen output
                 try:
                     with open(inputFilePath, 'r') as stdinFile, open(outputFilePath, 'w') as stdoutFile:
+                        # 检查是否是Python脚本
+                        if str(self.config.stdFilePath).endswith('.py'):
+                            cmd = ['python', str(self.config.stdFilePath)]
+                        else:
+                            cmd = [str(self.config.stdFilePath)]
+                        
                         result = subprocess.run(
-                            [self.config.stdFilePath],
+                            cmd,
                             stdin=stdinFile,      # 正确传递 stdin
                             stdout=stdoutFile,    # 直接写入文件
                             stderr=subprocess.PIPE,

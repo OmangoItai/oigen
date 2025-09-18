@@ -18,12 +18,18 @@ class Debug:
             task = progress.add_task("[cyan]Running...", total = len(targetBatches))
             for filename in targetPaths:
                 inputFilePath = self.oi.config.ioFilePath / filename
-                outputFilePath = self.oi.config.ioFilePath / filename.replace(".in", ".out")
+                outputFilePath = self.oi.config.ioFilePath / str(filename).replace(".in", ".out")
 
                 with open(inputFilePath, 'r') as stdinFile:
+                    # 检查是否是Python脚本
+                    if str(self.oi.config.stdFilePath).endswith('.py'):
+                        cmd = ['python', str(self.oi.config.stdFilePath)]
+                    else:
+                        cmd = [str(self.oi.config.stdFilePath)]
+                    
                     if printOnly:
                         result = subprocess.run(
-                            [self.oi.config.stdFilePath],
+                            cmd,
                             stdin=stdinFile,
                             stdout=subprocess.PIPE,  # 捕获输出
                             stderr=subprocess.PIPE,
@@ -37,7 +43,7 @@ class Debug:
                     else:
                         with open(outputFilePath, 'w') as stdoutFile:
                             result = subprocess.run(
-                                [self.oi.config.stdFilePath],
+                                cmd,
                                 stdin=stdinFile,
                                 stdout=stdoutFile,
                                 stderr=subprocess.PIPE,
@@ -64,8 +70,14 @@ class Debug:
 
                 # stdFilePath
                 with open(inputFilePath, 'r') as stdinFile:
+                    # 检查是否是Python脚本
+                    if str(self.oi.config.stdFilePath).endswith('.py'):
+                        std_cmd = ['python', str(self.oi.config.stdFilePath)]
+                    else:
+                        std_cmd = [str(self.oi.config.stdFilePath)]
+                    
                     stdResult = subprocess.run(
-                        [self.oi.config.stdFilePath],
+                        std_cmd,
                         stdin=stdinFile,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
@@ -79,8 +91,14 @@ class Debug:
 
                 # otherPath
                 with open(inputFilePath, 'r') as stdinFile:
+                    # 检查是否是Python脚本
+                    if str(otherPath).endswith('.py'):
+                        other_cmd = ['python', str(otherPath)]
+                    else:
+                        other_cmd = [str(otherPath)]
+                    
                     otherResult = subprocess.run(
-                        [otherPath],
+                        other_cmd,
                         stdin=stdinFile,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,

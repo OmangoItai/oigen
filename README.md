@@ -2,7 +2,7 @@
 
 Data generator for OI.
 
-一款准备做得专业化的微型框架，用于算法竞赛的出题工作。
+一款微型框架，用于算法竞赛的出题工作。
 
 OI Gen 拥有友好的交互、报错支持，支持灵活的小功能组合，3 分钟一个 python 脚本，告别**所有**市面上繁琐的劣质 GUI 和系统脚本编写。
 
@@ -41,7 +41,7 @@ def anyNameIsOK(n: int):
 生成 4 组数据，指定 handler 并填写题目参数的范围
 
 ```py
-oi.gen(4, "seqh", {
+oi.gen(4, "seq", {
     "n": randInt(1,10)
 })
 ```
